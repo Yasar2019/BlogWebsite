@@ -151,11 +151,11 @@ function layout(content) {
 }
 
 function header() {
-  const links = [['/', 'Home'], ['/blog', 'Blog'], ['/about', 'About'], ['/contact', 'Contact'], ['/cms', 'CMS']]
+  const links = [['/', 'Home'], ['/blog', 'Writing'], ['/about', 'About'], ['/contact', 'Contact'], ['/cms', 'CMS']]
   return `<header class="site-header">
-    <a href="${href('/')}" class="brand" aria-label="Engineering Notes home"><span class="brand-mark">AI</span><span>Engineering Notes</span></a>
+    <a href="${href('/')}" class="brand" aria-label="Engineering Notes home"><span class="brand-mark">AI</span><span><strong>Engineering Notes</strong><small>AI/ML · Systems · Career</small></span></a>
     <nav aria-label="Primary navigation">${links.map(([url, label]) => `<a href="${href(url)}">${label}</a>`).join('')}</nav>
-    <div class="header-actions"><button class="icon-button" id="theme-toggle" aria-label="Toggle color theme">${state.theme === 'dark' ? '☀️' : '🌙'}</button><button class="icon-button menu-button" id="menu-toggle" aria-label="Open menu">☰</button></div>
+    <div class="header-actions"><a class="subscribe-link" href="#newsletter">Subscribe</a><button class="icon-button" id="theme-toggle" aria-label="Toggle color theme">${state.theme === 'dark' ? '☀️' : '🌙'}</button><button class="icon-button menu-button" id="menu-toggle" aria-label="Open menu">☰</button></div>
   </header>`
 }
 
@@ -201,18 +201,28 @@ function profileCard() {
 function articleCard(article, horizontal = false) {
   return `<article class="article-card ${horizontal ? 'horizontal' : ''}">
     <a class="cover" href="${href(`/article/${article.id}`)}" style="background:${article.cover}" aria-label="Read ${esc(article.title)}"><span>${esc(article.category)}</span><i></i></a>
-    <div class="card-body"><div class="meta"><span>📅 ${formatDate(article.date)}</span><span>⏱ ${readingTime(article.content)} min read</span></div><h3><a href="${href(`/article/${article.id}`)}">${esc(article.title)}</a></h3><p>${esc(article.excerpt)}</p><div class="tag-row">${article.tags.slice(0, 3).map((tag) => `<a href="${href(`/blog?tag=${encodeURIComponent(tag)}`)}">${esc(tag)}</a>`).join('')}</div><p class="author-line">By ${author.name}</p></div>
+    <div class="card-body"><div class="meta"><span>${formatDate(article.date)}</span><span>${readingTime(article.content)} min read</span></div><h3><a href="${href(`/article/${article.id}`)}">${esc(article.title)}</a></h3><p>${esc(article.excerpt)}</p><div class="tag-row">${article.tags.slice(0, 3).map((tag) => `<a href="${href(`/blog?tag=${encodeURIComponent(tag)}`)}">${esc(tag)}</a>`).join('')}</div><p class="author-line">By ${author.name}</p></div>
   </article>`
+}
+
+function issueLink(article, index) {
+  return `<a class="issue-link" href="${href(`/article/${article.id}`)}"><span>${String(index + 1).padStart(2, '0')}</span><strong>${esc(article.title)}</strong><small>${formatDate(article.date)} · ${readingTime(article.content)} min</small></a>`
+}
+
+function featuredStory(article) {
+  return `<article class="lead-story"><a class="lead-art" href="${href(`/article/${article.id}`)}" style="background:${article.cover}"><span>${esc(article.category)}</span><i></i></a><div><p class="eyebrow">Lead story</p><h2><a href="${href(`/article/${article.id}`)}">${esc(article.title)}</a></h2><p>${esc(article.excerpt)}</p><div class="meta"><span>${formatDate(article.date)}</span><span>${readingTime(article.content)} min read</span><span>By ${author.name}</span></div><a class="button primary" href="${href(`/article/${article.id}`)}">Read the analysis →</a></div></article>`
 }
 
 function home() {
   const articles = publishedArticles()
+  const [lead, ...rest] = articles
   setMeta('Engineering Notes | AI/ML & Software Engineering Blog', 'Practical insights on AI, machine learning, software engineering, cloud architecture, and technology innovation.')
-  layout(`<section class="hero section-grid">
-    <div class="hero-copy"><p class="eyebrow">✨ AI/ML · Software Engineering · Systems</p><h1>Building AI Systems, Software, and Ideas That Scale</h1><p class="hero-subtitle">Production-grade notes for engineers building intelligent products, resilient platforms, and durable technical careers.</p><div class="button-row"><a class="button primary" href="${href('/blog')}">Read Articles →</a><a class="button secondary" href="${author.linkedin}">Connect on LinkedIn <span>in</span></a></div></div>
-    <div class="hero-visual"><div class="orbit one"></div><div class="orbit two"></div><div class="node-card main"><span>LLM</span><strong>Evaluation loop</strong><small>quality · latency · cost</small></div><div class="node-card side top">Vector search</div><div class="node-card side bottom">Cloud systems</div></div>
-    ${profileCard()}
-  </section><section class="section">${sectionHeading('Featured Articles', 'Latest technical writing', 'Deeply practical essays and tutorials for engineers building reliable systems.')}<div class="article-grid">${articles.slice(0, 6).map((a) => articleCard(a)).join('')}</div></section>${topics()}${aboutPreview()}${newsletter()}`)
+  layout(`<section class="publication-hero">
+    <div class="masthead"><p class="eyebrow">Independent engineering writing</p><h1>Engineering Notes</h1><p>Deep dives on AI systems, software architecture, cloud operations, and the craft of building reliable products.</p><div class="button-row"><a class="button primary" href="${href('/blog')}">Browse the archive →</a><a class="button secondary" href="#newsletter">Get the newsletter</a></div></div>
+    <div class="issue-panel"><div><span>This week</span><strong>${articles.length} field notes</strong></div><div><span>Focus</span><strong>Production AI</strong></div><div><span>Readers</span><strong>50k+</strong></div></div>
+  </section>
+  <section class="front-page section">${lead ? featuredStory(lead) : ''}<aside class="latest-stack"><p class="eyebrow">Latest dispatches</p>${rest.slice(0, 5).map(issueLink).join('')}<a class="archive-card" href="${href('/blog')}">View every article <span>→</span></a></aside></section>
+  <section class="section editorial-section">${sectionHeading('Featured Articles', 'Practical writing for builders', 'A magazine-style selection of essays, tutorials, and decision guides for modern engineering teams.')}<div class="article-grid">${articles.slice(1, 7).map((a) => articleCard(a)).join('')}</div></section>${topics()}${aboutPreview()}${newsletter()}`)
 }
 
 function topics() {
@@ -224,7 +234,7 @@ function aboutPreview() {
 }
 
 function newsletter() {
-  return `<section class="newsletter"><div><p class="eyebrow">Newsletter</p><h2>Stay Updated</h2><p>Receive new articles, tutorials, and technical insights directly in your inbox.</p></div><form id="newsletter-form"><label class="sr-only" for="email">Email address</label><input id="email" type="email" placeholder="you@company.com" required><button class="button primary" type="submit">Subscribe</button></form></section>`
+  return `<section class="newsletter" id="newsletter"><div><p class="eyebrow">Newsletter</p><h2>Stay sharp without the noise.</h2><p>A concise engineering briefing with new essays, production checklists, and research-to-practice notes.</p></div><form id="newsletter-form"><label class="sr-only" for="email">Email address</label><input id="email" type="email" placeholder="you@company.com" required><button class="button primary" type="submit">Subscribe</button></form></section>`
 }
 
 function blog() {
@@ -240,7 +250,7 @@ function blog() {
   if (sort === 'Most Popular') articles.sort((a, b) => b.popularity - a.popularity)
   if (sort === 'Shortest Reads') articles.sort((a, b) => readingTime(a.content) - readingTime(b.content))
   const allTags = [...new Set(publishedArticles().flatMap((article) => article.tags))]
-  layout(`<section class="section page-section"><div class="blog-hero">${sectionHeading('Knowledge Base', 'Articles for AI/ML and software builders', 'Filter by topic, tag, popularity, or reading time. Every article is written for practical production decisions.')}</div><form class="filters" id="filters"><input name="q" value="${esc(q)}" placeholder="Search articles, tags, or concepts"><select name="category"><option>All</option>${categories.map((item) => `<option ${item === category ? 'selected' : ''}>${item}</option>`).join('')}</select><select name="tag"><option>All</option>${allTags.map((item) => `<option ${item === tag ? 'selected' : ''}>${item}</option>`).join('')}</select><select name="sort">${['Newest First', 'Most Popular', 'Shortest Reads'].map((item) => `<option ${item === sort ? 'selected' : ''}>${item}</option>`).join('')}</select><button class="button primary">Search</button></form><div class="article-list">${articles.length ? articles.map((a) => articleCard(a, true)).join('') : '<p class="empty">No articles match your filters yet.</p>'}</div></section>`)
+  layout(`<section class="section page-section"><div class="blog-hero"><div>${sectionHeading('Knowledge Base', 'Articles for AI/ML and software builders', 'Filter by topic, tag, popularity, or reading time. Every article is written for practical production decisions.')}</div><div class="blog-hero-card"><span>Archive</span><strong>${publishedArticles().length}</strong><small>published pieces</small></div></div><form class="filters" id="filters"><input name="q" value="${esc(q)}" placeholder="Search articles, tags, or concepts"><select name="category"><option>All</option>${categories.map((item) => `<option ${item === category ? 'selected' : ''}>${item}</option>`).join('')}</select><select name="tag"><option>All</option>${allTags.map((item) => `<option ${item === tag ? 'selected' : ''}>${item}</option>`).join('')}</select><select name="sort">${['Newest First', 'Most Popular', 'Shortest Reads'].map((item) => `<option ${item === sort ? 'selected' : ''}>${item}</option>`).join('')}</select><button class="button primary">Search</button></form><div class="article-list">${articles.length ? articles.map((a) => articleCard(a, true)).join('') : '<p class="empty">No articles match your filters yet.</p>'}</div></section>`)
   document.querySelector('#filters').onsubmit = (event) => {
     event.preventDefault()
     const data = new FormData(event.target)
