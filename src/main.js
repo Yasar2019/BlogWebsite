@@ -4,7 +4,17 @@ const app = document.querySelector('#root')
 const storageKey = 'engineering-blog-articles'
 const themeKey = 'engineering-blog-theme'
 const bookmarkKey = 'engineering-blog-bookmarks'
-const icons = { brain: '🧠', code: '⌘', rocket: '🚀', cloud: '☁️', career: '💼', calendar: '📅', data: '▦', search: '⌕', link: 'in' }
+const siteUrl = 'https://example.com'
+
+const icons = {
+  'AI & Machine Learning': '🧠',
+  'Software Engineering': '⌘',
+  'System Design': '⚙️',
+  'Cloud & DevOps': '☁️',
+  'Career Growth': '🧭',
+  Productivity: '⚡',
+  'Data Engineering': '▦',
+}
 
 const state = {
   articles: read(storageKey, seedArticles),
@@ -13,31 +23,124 @@ const state = {
 }
 
 document.documentElement.dataset.theme = state.theme
+window.addEventListener('popstate', render)
 window.addEventListener('hashchange', render)
-window.addEventListener('scroll', updateProgress)
+window.addEventListener('scroll', updateProgress, { passive: true })
 
-function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback } catch { return fallback } }
-function save() { localStorage.setItem(storageKey, JSON.stringify(state.articles)); localStorage.setItem(bookmarkKey, JSON.stringify(state.bookmarks)) }
-function esc(value = '') { return String(value).replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m])) }
-function slugify(value) { return value.toLowerCase().replace(/<[^>]+>/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }
-function readingTime(content = '') { return Math.max(1, Math.ceil(content.replace(/[#`>*_\-[\]()]/g, ' ').trim().split(/\s+/).filter(Boolean).length / 220)) }
-function formatDate(date) { return new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(date)) }
-function isPublished(article) { return article.status === 'published' && new Date(article.scheduledAt || article.date) <= new Date() }
-function publishedArticles() { return state.articles.filter(isPublished).sort((a, b) => new Date(b.date) - new Date(a.date)) }
-function route() { const [path, query = ''] = (location.hash || '#/').replace(/^#/, '').split('?'); return { path: path || '/', params: new URLSearchParams(query) } }
-function setMeta(title, description, type = 'website') { document.title = title; [['name', 'description', description], ['property', 'og:title', title], ['property', 'og:description', description], ['property', 'og:type', type], ['name', 'twitter:title', title], ['name', 'twitter:description', description]].forEach(([attr, key, content]) => { let el = document.querySelector(`meta[${attr}="${key}"]`); if (!el) { el = document.createElement('meta'); el.setAttribute(attr, key); document.head.appendChild(el) } el.setAttribute('content', content) }) }
-function updateProgress() { const max = document.documentElement.scrollHeight - innerHeight; document.querySelector('.progress').style.width = `${max > 0 ? (scrollY / max) * 100 : 0}%` }
+document.addEventListener('click', (event) => {
+  const anchor = event.target.closest('a[href]')
+  if (!anchor || anchor.target || anchor.hasAttribute('download')) return
+  const href = anchor.getAttribute('href')
+  if (!href || href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('/rss') || href.startsWith('/sitemap') || href.startsWith('/robots')) return
+  if (href.startsWith('#/')) {
+    event.preventDefault()
+    navigate(href.slice(1))
+  } else if (href.startsWith('/')) {
+    event.preventDefault()
+    navigate(href)
+  }
+})
+
+function read(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback
+  } catch {
+    return fallback
+  }
+}
+
+function save() {
+  localStorage.setItem(storageKey, JSON.stringify(state.articles))
+  localStorage.setItem(bookmarkKey, JSON.stringify(state.bookmarks))
+}
+
+function esc(value = '') {
+  return String(value).replace(/[&<>"']/g, (match) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[match])
+}
+
+function slugify(value) {
+  return value.toLowerCase().replace(/<[^>]+>/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+function readingTime(content = '') {
+  return Math.max(1, Math.ceil(content.replace(/[#`>*_\-[\]()]/g, ' ').trim().split(/\s+/).filter(Boolean).length / 220))
+}
+
+function formatDate(date) {
+  return new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(date))
+}
+
+function isPublished(article) {
+  return article.status === 'published' && new Date(article.scheduledAt || article.date) <= new Date()
+}
+
+function publishedArticles() {
+  return state.articles.filter(isPublished).sort((a, b) => new Date(b.date) - new Date(a.date))
+}
+
+function route() {
+  if (location.hash.startsWith('#/')) {
+    const [path, query = ''] = location.hash.slice(1).split('?')
+    return { path: path || '/', params: new URLSearchParams(query) }
+  }
+  return { path: location.pathname === '/index.html' ? '/' : location.pathname, params: new URLSearchParams(location.search) }
+}
+
+function navigate(to) {
+  history.pushState({}, '', to)
+  render()
+}
+
+function href(to) {
+  return to
+}
+
+function setMeta(title, description, type = 'website', image = '/og-image.svg') {
+  document.title = title
+  const meta = [
+    ['name', 'description', description],
+    ['property', 'og:title', title],
+    ['property', 'og:description', description],
+    ['property', 'og:type', type],
+    ['property', 'og:image', image],
+    ['name', 'twitter:title', title],
+    ['name', 'twitter:description', description],
+    ['name', 'twitter:image', image],
+  ]
+  meta.forEach(([attr, key, content]) => {
+    let element = document.querySelector(`meta[${attr}="${key}"]`)
+    if (!element) {
+      element = document.createElement('meta')
+      element.setAttribute(attr, key)
+      document.head.appendChild(element)
+    }
+    element.setAttribute('content', content)
+  })
+  const canonical = document.querySelector('link[rel="canonical"]')
+  if (canonical) canonical.setAttribute('href', `${siteUrl}${route().path === '/' ? '/' : route().path}`)
+}
+
+function updateProgress() {
+  const bar = document.querySelector('.progress')
+  if (!bar) return
+  const max = document.documentElement.scrollHeight - innerHeight
+  bar.style.width = `${max > 0 ? (scrollY / max) * 100 : 0}%`
+}
 
 function markdown(source = '') {
   let html = esc(source)
-    .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code data-lang="${esc(lang || 'text')}">${code.trim()}</code><button class="copy-code" data-code="${encodeURIComponent(code.trim())}">Copy</button></pre>`)
+    .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code data-lang="${esc(lang || 'text')}">${esc(code.trim())}</code><button class="copy-code" data-code="${encodeURIComponent(code.trim())}">Copy</button></pre>`)
     .replace(/^## (.+)$/gm, (_, text) => `<h2 id="${slugify(text)}">${text}</h2>`)
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
     .replace(/^\d+\. \*\*(.+?)\*\* (.+)$/gm, '<li><strong>$1</strong> $2</li>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  html = html.split(/\n{2,}/).map((block) => block.startsWith('<h') || block.startsWith('<pre') || block.startsWith('<blockquote') ? block : block.includes('<li>') ? `<ul>${block}</ul>` : `<p>${block.replace(/\n/g, '<br>')}</p>`).join('')
+  html = html.split(/\n{2,}/).map((block) => {
+    if (block.startsWith('<h') || block.startsWith('<pre') || block.startsWith('<blockquote')) return block
+    if (block.includes('<li>')) return `<ul>${block}</ul>`
+    return `<p>${block.replace(/\n/g, '<br>')}</p>`
+  }).join('')
   return html
 }
 
@@ -46,54 +149,170 @@ function layout(content) {
   bindGlobal()
   updateProgress()
 }
-function header() { return `<header class="site-header"><a href="#/" class="brand" aria-label="Engineering Notes home"><span class="brand-mark">AI</span><span>Engineering Notes</span></a><nav aria-label="Primary navigation"><a href="#/">Home</a><a href="#/blog">Blog</a><a href="#/about">About</a><a href="#/contact">Contact</a><a href="#/cms">CMS</a></nav><div class="header-actions"><button class="icon-button" id="theme-toggle" aria-label="Toggle dark mode">${state.theme === 'dark' ? '☀️' : '🌙'}</button><button class="icon-button menu-button" id="menu-toggle" aria-label="Open menu">☰</button></div></header>` }
-function footer() { return `<footer><script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Blog', name: 'Engineering Notes', author: { '@type': 'Person', name: author.name }, about: categories })}</script><div><strong>Engineering Notes</strong><p>AI/ML, software engineering, and systems thinking for builders.</p></div><div><a href="/rss.xml">RSS</a><a href="/sitemap.xml">Sitemap</a><a href="${author.linkedin}">LinkedIn</a><a href="${author.github}">GitHub</a></div></footer>` }
-function bindGlobal() { document.querySelector('#theme-toggle').onclick = () => { state.theme = state.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = state.theme; localStorage.setItem(themeKey, state.theme); render() }; document.querySelector('#menu-toggle').onclick = () => document.querySelector('.site-header nav').classList.toggle('open'); document.querySelectorAll('#newsletter-form').forEach((form) => { form.onsubmit = (event) => { event.preventDefault(); form.insertAdjacentHTML('beforeend', '<p class="success">Thanks — you are on the list.</p>') } }) }
-function sectionHeading(label, title, text) { return `<div class="section-heading"><p class="eyebrow">${esc(label)}</p><h2>${esc(title)}</h2><p>${esc(text)}</p></div>` }
-function profileCard() { return `<aside class="profile-card" aria-label="Professional profile"><div class="avatar"><span>AM</span></div><h2>${author.name}</h2><p>${author.role}</p><div class="metric-row"><span><strong>10+</strong> years engineering</span><span><strong>50k+</strong> readers</span></div><div class="signal-list"><span>✓ Production AI systems</span><span>✓ Cloud-native platforms</span><span>✓ Engineer-to-engineer writing</span></div></aside>` }
-function articleCard(article, horizontal = false) { return `<article class="article-card ${horizontal ? 'horizontal' : ''}"><a class="cover" href="#/article/${article.id}" style="background:${article.cover}" aria-label="Read ${esc(article.title)}"><span>${esc(article.category)}</span></a><div class="card-body"><div class="meta"><span>📅 ${formatDate(article.date)}</span><span>⏱ ${readingTime(article.content)} min read</span></div><h3><a href="#/article/${article.id}">${esc(article.title)}</a></h3><p>${esc(article.excerpt)}</p><div class="tag-row">${article.tags.slice(0, 3).map((tag) => `<span>${esc(tag)}</span>`).join('')}</div><p class="author-line">By ${author.name}</p></div></article>` }
+
+function header() {
+  const links = [['/', 'Home'], ['/blog', 'Blog'], ['/about', 'About'], ['/contact', 'Contact'], ['/cms', 'CMS']]
+  return `<header class="site-header">
+    <a href="${href('/')}" class="brand" aria-label="Engineering Notes home"><span class="brand-mark">AI</span><span>Engineering Notes</span></a>
+    <nav aria-label="Primary navigation">${links.map(([url, label]) => `<a href="${href(url)}">${label}</a>`).join('')}</nav>
+    <div class="header-actions"><button class="icon-button" id="theme-toggle" aria-label="Toggle color theme">${state.theme === 'dark' ? '☀️' : '🌙'}</button><button class="icon-button menu-button" id="menu-toggle" aria-label="Open menu">☰</button></div>
+  </header>`
+}
+
+function footer() {
+  const schema = { '@context': 'https://schema.org', '@type': 'Blog', name: 'Engineering Notes', url: siteUrl, author: { '@type': 'Person', name: author.name, jobTitle: author.role }, about: categories }
+  return `<footer>
+    <script type="application/ld+json">${JSON.stringify(schema)}</script>
+    <div><strong>Engineering Notes</strong><p>Field notes for AI/ML, software engineering, cloud systems, and builders who care about production quality.</p></div>
+    <div><a href="/rss.xml">RSS</a><a href="/sitemap.xml">Sitemap</a><a href="/robots.txt">Robots</a><a href="${author.linkedin}">LinkedIn</a><a href="${author.github}">GitHub</a></div>
+  </footer>`
+}
+
+function bindGlobal() {
+  document.querySelector('#theme-toggle').onclick = () => {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark'
+    document.documentElement.dataset.theme = state.theme
+    localStorage.setItem(themeKey, state.theme)
+  }
+  document.querySelector('#menu-toggle').onclick = () => document.querySelector('.site-header nav').classList.toggle('open')
+  document.querySelectorAll('#newsletter-form').forEach((form) => {
+    form.onsubmit = (event) => {
+      event.preventDefault()
+      if (!form.querySelector('.success')) form.insertAdjacentHTML('beforeend', '<p class="success">Thanks — you are on the list.</p>')
+    }
+  })
+  document.querySelectorAll('.copy-code').forEach((button) => {
+    button.onclick = () => navigator.clipboard.writeText(decodeURIComponent(button.dataset.code)).then(() => { button.textContent = 'Copied' })
+  })
+}
+
+function sectionHeading(label, title, text) {
+  return `<div class="section-heading"><p class="eyebrow">${esc(label)}</p><h2>${esc(title)}</h2><p>${esc(text)}</p></div>`
+}
+
+function profileCard() {
+  return `<aside class="profile-card" aria-label="Professional profile">
+    <div class="avatar"><span>AM</span></div><h2>${author.name}</h2><p>${author.role}</p>
+    <div class="metric-row"><span><strong>10+</strong> years engineering</span><span><strong>50k+</strong> readers</span></div>
+    <div class="signal-list"><span>✓ Production AI systems</span><span>✓ Cloud-native platforms</span><span>✓ Engineer-to-engineer writing</span></div>
+  </aside>`
+}
+
+function articleCard(article, horizontal = false) {
+  return `<article class="article-card ${horizontal ? 'horizontal' : ''}">
+    <a class="cover" href="${href(`/article/${article.id}`)}" style="background:${article.cover}" aria-label="Read ${esc(article.title)}"><span>${esc(article.category)}</span><i></i></a>
+    <div class="card-body"><div class="meta"><span>📅 ${formatDate(article.date)}</span><span>⏱ ${readingTime(article.content)} min read</span></div><h3><a href="${href(`/article/${article.id}`)}">${esc(article.title)}</a></h3><p>${esc(article.excerpt)}</p><div class="tag-row">${article.tags.slice(0, 3).map((tag) => `<a href="${href(`/blog?tag=${encodeURIComponent(tag)}`)}">${esc(tag)}</a>`).join('')}</div><p class="author-line">By ${author.name}</p></div>
+  </article>`
+}
 
 function home() {
   const articles = publishedArticles()
   setMeta('Engineering Notes | AI/ML & Software Engineering Blog', 'Practical insights on AI, machine learning, software engineering, cloud architecture, and technology innovation.')
-  layout(`<section class="hero section-grid"><div><p class="eyebrow">✨ AI/ML · Software Engineering · Systems</p><h1>Building AI Systems, Software, and Ideas That Scale</h1><p class="hero-subtitle">I share practical insights on AI, machine learning, software engineering, cloud architecture, and technology innovation.</p><div class="button-row"><a class="button primary" href="#/blog">Read Articles →</a><a class="button secondary" href="${author.linkedin}">Connect on LinkedIn in</a></div></div>${profileCard()}</section><section class="section">${sectionHeading('Featured Articles', 'Latest technical writing', 'Deeply practical essays and tutorials for engineers building reliable systems.')}<div class="article-grid">${articles.slice(0, 6).map((a) => articleCard(a)).join('')}</div></section>${topics()}${aboutPreview()}${newsletter()}`)
+  layout(`<section class="hero section-grid">
+    <div class="hero-copy"><p class="eyebrow">✨ AI/ML · Software Engineering · Systems</p><h1>Building AI Systems, Software, and Ideas That Scale</h1><p class="hero-subtitle">Production-grade notes for engineers building intelligent products, resilient platforms, and durable technical careers.</p><div class="button-row"><a class="button primary" href="${href('/blog')}">Read Articles →</a><a class="button secondary" href="${author.linkedin}">Connect on LinkedIn <span>in</span></a></div></div>
+    <div class="hero-visual"><div class="orbit one"></div><div class="orbit two"></div><div class="node-card main"><span>LLM</span><strong>Evaluation loop</strong><small>quality · latency · cost</small></div><div class="node-card side top">Vector search</div><div class="node-card side bottom">Cloud systems</div></div>
+    ${profileCard()}
+  </section><section class="section">${sectionHeading('Featured Articles', 'Latest technical writing', 'Deeply practical essays and tutorials for engineers building reliable systems.')}<div class="article-grid">${articles.slice(0, 6).map((a) => articleCard(a)).join('')}</div></section>${topics()}${aboutPreview()}${newsletter()}`)
 }
-function topics() { const map = { 'AI & Machine Learning': icons.brain, 'Software Engineering': icons.code, 'System Design': icons.rocket, 'Cloud & DevOps': icons.cloud, 'Career Growth': icons.career, Productivity: icons.calendar, 'Data Engineering': icons.data }; return `<section class="section">${sectionHeading('Topics', 'Focused areas of expertise', 'Browse practical content across the disciplines modern engineers use every day.')}<div class="topic-grid">${categories.map((topic) => `<a class="topic-card" href="#/blog?category=${encodeURIComponent(topic)}"><span>${map[topic]}</span><span>${topic}</span><span>›</span></a>`).join('')}</div></section>` }
-function aboutPreview() { return `<section class="about-preview section-grid"><div><p class="eyebrow">About</p><h2>Practical engineering lessons from real production work.</h2><p>I am a software engineer and AI/ML practitioner focused on building dependable intelligent systems. My work spans backend platforms, data pipelines, cloud architecture, model integration, and developer productivity.</p><p>My mission is to turn complex technical topics into clear, useful guidance that engineers can apply immediately.</p><a class="button secondary" href="#/about">Learn More →</a></div><div class="quote-card">“Serious engineering writing should reduce ambiguity, improve judgment, and help teams ship better systems.”</div></section>` }
-function newsletter() { return `<section class="newsletter"><div><p class="eyebrow">Newsletter</p><h2>Stay Updated</h2><p>Receive new articles, tutorials, and technical insights directly in your inbox.</p></div><form id="newsletter-form"><label class="sr-only" for="email">Email address</label><input id="email" type="email" placeholder="you@company.com" required><button class="button primary" type="submit">Subscribe</button></form></section>` }
+
+function topics() {
+  return `<section class="section">${sectionHeading('Topics', 'Focused areas of expertise', 'Browse practical content across the disciplines modern engineers use every day.')}<div class="topic-grid">${categories.map((topic) => `<a class="topic-card" href="${href(`/blog?category=${encodeURIComponent(topic)}`)}"><span>${icons[topic] || '✦'}</span><strong>${topic}</strong><small>Explore →</small></a>`).join('')}</div></section>`
+}
+
+function aboutPreview() {
+  return `<section class="about-preview section-grid"><div><p class="eyebrow">About</p><h2>Practical engineering lessons from real production work.</h2><p>I am a software engineer and AI/ML practitioner focused on building dependable intelligent systems. My work spans backend platforms, data pipelines, cloud architecture, model integration, and developer productivity.</p><p>My mission is to turn complex technical topics into clear, useful guidance that engineers can apply immediately.</p><a class="button secondary" href="${href('/about')}">Learn More →</a></div><div class="quote-card">“Serious engineering writing should reduce ambiguity, improve judgment, and help teams ship better systems.”</div></section>`
+}
+
+function newsletter() {
+  return `<section class="newsletter"><div><p class="eyebrow">Newsletter</p><h2>Stay Updated</h2><p>Receive new articles, tutorials, and technical insights directly in your inbox.</p></div><form id="newsletter-form"><label class="sr-only" for="email">Email address</label><input id="email" type="email" placeholder="you@company.com" required><button class="button primary" type="submit">Subscribe</button></form></section>`
+}
 
 function blog() {
   setMeta('Blog | Engineering Notes', 'Search technical articles by title, content, category, tags, date, and popularity.')
-  const { params } = route(); const q = params.get('q') || ''; const category = params.get('category') || 'All'; const tag = params.get('tag') || 'All'; const sort = params.get('sort') || 'Newest First'; const articles = filterArticles(q, category, tag, sort); const tags = [...new Set(publishedArticles().flatMap((a) => a.tags))]
-  layout(`<section class="section page-section">${sectionHeading('Blog', 'Technical articles and tutorials', 'Search, filter, and read production-minded content for AI/ML and software engineering.')}<div class="filters"><label>⌕ <input id="search" value="${esc(q)}" placeholder="Search title, content, or tags"></label><select id="category"><option>All</option>${categories.map((c) => `<option ${c === category ? 'selected' : ''}>${c}</option>`).join('')}</select><select id="tag"><option>All</option>${tags.map((t) => `<option ${t === tag ? 'selected' : ''}>${t}</option>`).join('')}</select><select id="sort">${['Newest First', 'Oldest First', 'Most Popular'].map((s) => `<option ${s === sort ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="article-list">${articles.length ? articles.map((a) => articleCard(a, true)).join('') : '<p class="empty">No articles match your filters.</p>'}</div></section>`)
-  ;['search', 'category', 'tag', 'sort'].forEach((id) => document.querySelector(`#${id}`).addEventListener('input', syncFilters))
+  const { params } = route()
+  const q = params.get('q') || ''
+  const category = params.get('category') || 'All'
+  const tag = params.get('tag') || 'All'
+  const sort = params.get('sort') || 'Newest First'
+  let articles = publishedArticles().filter((article) => [article.title, article.excerpt, article.content, article.category, article.tags.join(' ')].join(' ').toLowerCase().includes(q.toLowerCase()))
+  if (category !== 'All') articles = articles.filter((article) => article.category === category)
+  if (tag !== 'All') articles = articles.filter((article) => article.tags.includes(tag))
+  if (sort === 'Most Popular') articles.sort((a, b) => b.popularity - a.popularity)
+  if (sort === 'Shortest Reads') articles.sort((a, b) => readingTime(a.content) - readingTime(b.content))
+  const allTags = [...new Set(publishedArticles().flatMap((article) => article.tags))]
+  layout(`<section class="section page-section"><div class="blog-hero">${sectionHeading('Knowledge Base', 'Articles for AI/ML and software builders', 'Filter by topic, tag, popularity, or reading time. Every article is written for practical production decisions.')}</div><form class="filters" id="filters"><input name="q" value="${esc(q)}" placeholder="Search articles, tags, or concepts"><select name="category"><option>All</option>${categories.map((item) => `<option ${item === category ? 'selected' : ''}>${item}</option>`).join('')}</select><select name="tag"><option>All</option>${allTags.map((item) => `<option ${item === tag ? 'selected' : ''}>${item}</option>`).join('')}</select><select name="sort">${['Newest First', 'Most Popular', 'Shortest Reads'].map((item) => `<option ${item === sort ? 'selected' : ''}>${item}</option>`).join('')}</select><button class="button primary">Search</button></form><div class="article-list">${articles.length ? articles.map((a) => articleCard(a, true)).join('') : '<p class="empty">No articles match your filters yet.</p>'}</div></section>`)
+  document.querySelector('#filters').onsubmit = (event) => {
+    event.preventDefault()
+    const data = new FormData(event.target)
+    navigate(`/blog?${new URLSearchParams(data).toString()}`)
+  }
 }
-function filterArticles(query, category, tag, sort) { return publishedArticles().filter((a) => [a.title, a.excerpt, a.content, a.tags.join(' ')].join(' ').toLowerCase().includes(query.toLowerCase()) && (category === 'All' || a.category === category) && (tag === 'All' || a.tags.includes(tag))).sort((a, b) => sort === 'Oldest First' ? new Date(a.date) - new Date(b.date) : sort === 'Most Popular' ? b.popularity - a.popularity : new Date(b.date) - new Date(a.date)) }
-function syncFilters() { const q = document.querySelector('#search').value; const category = document.querySelector('#category').value; const tag = document.querySelector('#tag').value; const sort = document.querySelector('#sort').value; location.hash = `#/blog?q=${encodeURIComponent(q)}&category=${encodeURIComponent(category)}&tag=${encodeURIComponent(tag)}&sort=${encodeURIComponent(sort)}` }
 
 function articlePage(id) {
-  const article = publishedArticles().find((a) => a.id === id); if (!article) return layout('<section class="section page-section"><h1>Article not found</h1></section>')
+  const article = state.articles.find((item) => item.id === id && isPublished(item))
+  if (!article) {
+    setMeta('Article not found | Engineering Notes', 'The requested article could not be found.')
+    layout(`<section class="section page-section"><p class="empty">Article not found. <a href="${href('/blog')}">Browse all articles</a>.</p></section>`)
+    return
+  }
   setMeta(`${article.title} | Engineering Notes`, article.excerpt, 'article')
-  const toc = [...article.content.matchAll(/^##\s+(.+)$/gm)].map((m) => ({ title: m[1], id: slugify(m[1]) }))
-  const related = publishedArticles().filter((a) => a.id !== article.id && (a.category === article.category || a.tags.some((t) => article.tags.includes(t)))).slice(0, 3)
-  const shareUrl = encodeURIComponent(location.href)
-  layout(`<article class="article-page"><header class="article-hero"><p class="eyebrow">${article.category}</p><h1>${esc(article.title)}</h1><p class="subtitle">${esc(article.subtitle)}</p><div class="article-meta"><span>${author.name}</span><span>${formatDate(article.date)}</span><span>${readingTime(article.content)} min read</span></div><div class="tag-row centered">${article.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div></header><div class="article-shell"><aside class="toc"><strong>Table of Contents</strong>${toc.map((i) => `<a href="#${i.id}">${esc(i.title)}</a>`).join('')}</aside><div class="prose">${markdown(article.content)}</div><aside class="share"><button id="bookmark" class="button secondary">${state.bookmarks.includes(article.id) ? 'Bookmarked' : 'Bookmark'}</button><span>↗ Share</span><a href="https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}">in LinkedIn</a><a href="https://twitter.com/intent/tweet?url=${shareUrl}&text=${encodeURIComponent(article.title)}">𝕏 X/Twitter</a><a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}">f Facebook</a></aside></div><section class="section related">${sectionHeading('Continue Reading', 'Related articles', 'Recommended next reads based on topic and tags.')}<div class="article-grid">${related.map((a) => articleCard(a)).join('')}</div></section>${newsletter()}${comments()}</article>`)
-  document.querySelector('#bookmark').onclick = () => { state.bookmarks = state.bookmarks.includes(article.id) ? state.bookmarks.filter((x) => x !== article.id) : [...state.bookmarks, article.id]; save(); articlePage(id) }
-  document.querySelectorAll('.copy-code').forEach((button) => button.onclick = () => navigator.clipboard.writeText(decodeURIComponent(button.dataset.code)).then(() => { button.textContent = 'Copied' }))
-  bindComments()
+  const headings = [...article.content.matchAll(/^## (.+)$/gm)].map((match) => match[1])
+  const bookmarked = state.bookmarks.includes(article.id)
+  layout(`<article><section class="article-hero" style="--article-cover:${article.cover}"><p class="eyebrow">${esc(article.category)}</p><h1>${esc(article.title)}</h1><p>${esc(article.subtitle)}</p><div class="article-meta meta"><span>${formatDate(article.date)}</span><span>${readingTime(article.content)} min read</span><span>By ${author.name}</span></div><div class="tag-row centered">${article.tags.map((tag) => `<a href="${href(`/blog?tag=${encodeURIComponent(tag)}`)}">${esc(tag)}</a>`).join('')}</div><button class="button secondary" id="bookmark">${bookmarked ? '★ Saved' : '☆ Save article'}</button></section><section class="article-shell"><aside class="toc"><strong>On this page</strong>${headings.map((heading) => `<a href="#${slugify(heading)}">${esc(heading)}</a>`).join('')}</aside><div class="prose">${markdown(article.content)}</div><aside class="share"><span>Share</span><a href="https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(location.href)}">LinkedIn</a><a href="mailto:?subject=${encodeURIComponent(article.title)}&body=${encodeURIComponent(location.href)}">Email</a></aside></section><section class="comments section"><h2>Discussion</h2><form><textarea placeholder="Add a thoughtful comment"></textarea><button class="button secondary">Post Comment</button></form></section></article>`)
+  document.querySelector('#bookmark').onclick = () => {
+    state.bookmarks = bookmarked ? state.bookmarks.filter((item) => item !== article.id) : [...state.bookmarks, article.id]
+    save()
+    articlePage(id)
+  }
 }
-function comments() { return `<section class="comments section"><h2>Discussion</h2><form id="comment-form"><input name="name" placeholder="Name" required><textarea name="comment" placeholder="Add a thoughtful comment" required></textarea><button class="button primary">Post Comment</button></form><div id="comment-list"></div></section>` }
-function bindComments() { const list = document.querySelector('#comment-list'); document.querySelector('#comment-form').onsubmit = (e) => { e.preventDefault(); const data = new FormData(e.target); list.insertAdjacentHTML('beforeend', `<div class="comment"><strong>${esc(data.get('name'))}</strong><p>${esc(data.get('comment'))}</p></div>`); e.target.reset() } }
 
-function about() { setMeta('About | Engineering Notes', 'Professional profile, journey, expertise, projects, and publications.'); const skills = ['AI/ML', 'Python', 'Cloud', 'Data Engineering', 'Backend Development', 'DevOps']; layout(`<section class="section page-section"><div class="about-hero section-grid">${profileCard()}<div><p class="eyebrow">About</p><h1>Engineer, AI practitioner, and technical writer.</h1><p>I build scalable software and applied AI systems, then write about the patterns, tradeoffs, and lessons that help engineering teams make better decisions.</p></div></div>${sectionHeading('Journey', 'Professional journey', 'A concise timeline of engineering growth and focus areas.')}<div class="timeline">${[['2026', 'Scaling AI-native products with robust evaluation and platform observability.'], ['2023', 'Led cloud-native backend initiatives across data-intensive services.'], ['2020', 'Built production ML workflows, data pipelines, and developer tooling.'], ['2016', 'Started professional software engineering journey in backend systems.']].map(([y, t]) => `<div><strong>${y}</strong><p>${t}</p></div>`).join('')}</div>${sectionHeading('Expertise', 'Core technical strengths', 'A cross-functional foundation for AI-native products and platforms.')}<div class="skill-grid">${skills.map((s) => `<span>${s}</span>`).join('')}</div>${sectionHeading('Projects', 'Featured project themes', 'Representative work across AI, cloud, data, and engineering enablement.')}<div class="project-grid">${['LLM Evaluation Platform', 'Cloud Cost Intelligence Dashboard', 'Real-time Data Pipeline', 'Developer Productivity Toolkit'].map((p) => `<div class="project-card"><h3>🚀 ${p}</h3><p>Designed for reliability, maintainability, and measurable product impact.</p></div>`).join('')}</div>${sectionHeading('Speaking / Publications', 'Technical communication', 'Available for practical talks, architecture reviews, podcasts, and written technical explainers.')}<section class="cta-panel"><h2>Interested in collaborating?</h2><p>Reach out for engineering leadership, AI platform, or technical writing conversations.</p><a class="button primary" href="#/contact">Contact Me</a></section></section>`) }
-function contact() { setMeta('Contact | Engineering Notes', 'Contact form and professional links for LinkedIn, GitHub, email, and resume.'); layout(`<section class="section page-section contact">${sectionHeading('Contact', 'Let’s talk engineering', 'Use the form or connect through professional channels.')}<div class="contact-grid"><form class="contact-form" id="contact-form"><input placeholder="Name" required><input type="email" placeholder="Email" required><input placeholder="Subject" required><textarea placeholder="How can I help?" required></textarea><button class="button primary">Send Message</button></form><div class="contact-card"><a href="${author.linkedin}">in LinkedIn</a><a href="${author.github}">⌘ GitHub</a><a href="mailto:${author.email}">✉ Email</a><a href="/resume.pdf">⇣ Resume download</a></div></div></section>`); document.querySelector('#contact-form').onsubmit = (e) => { e.preventDefault(); alert('Thanks for reaching out!') } }
+function about() {
+  setMeta('About | Engineering Notes', 'Professional profile, technical expertise, projects, and background for Alex Morgan.')
+  const skills = ['LLM application architecture', 'RAG and evaluation systems', 'Backend platform design', 'Cloud-native delivery', 'Data pipelines', 'Observability', 'Technical leadership', 'Developer productivity', 'Technical writing']
+  layout(`<section class="section page-section about">${sectionHeading('About', `${author.name}: AI/ML and software engineering`, 'A practical profile for engineering teams, founders, and technical readers.')}${profileCard()}<div class="timeline">${[['2026', 'Writing practical AI/ML and software engineering field notes for production builders.'], ['2024', 'Led cloud-native backend initiatives across data-intensive services.'], ['2020', 'Built production ML workflows, data pipelines, and developer tooling.'], ['2016', 'Started professional software engineering journey in backend systems.']].map(([year, text]) => `<div><strong>${year}</strong><p>${text}</p></div>`).join('')}</div>${sectionHeading('Expertise', 'Core technical strengths', 'A cross-functional foundation for AI-native products and platforms.')}<div class="skill-grid">${skills.map((skill) => `<span>${skill}</span>`).join('')}</div>${sectionHeading('Projects', 'Featured project themes', 'Representative work across AI, cloud, data, and engineering enablement.')}<div class="project-grid">${['LLM Evaluation Platform', 'Cloud Cost Intelligence Dashboard', 'Real-time Data Pipeline', 'Developer Productivity Toolkit'].map((project) => `<div class="project-card"><h3>🚀 ${project}</h3><p>Designed for reliability, maintainability, and measurable product impact.</p></div>`).join('')}</div><section class="cta-panel"><h2>Interested in collaborating?</h2><p>Reach out for engineering leadership, AI platform, or technical writing conversations.</p><a class="button primary" href="${href('/contact')}">Contact Me</a></section></section>`)
+}
+
+function contact() {
+  setMeta('Contact | Engineering Notes', 'Contact form and professional links for LinkedIn, GitHub, email, and resume.')
+  layout(`<section class="section page-section contact">${sectionHeading('Contact', 'Let’s talk engineering', 'Use the form or connect through professional channels.')}<div class="contact-grid"><form class="contact-form" id="contact-form"><input placeholder="Name" required><input type="email" placeholder="Email" required><input placeholder="Subject" required><textarea placeholder="How can I help?" required></textarea><button class="button primary">Send Message</button></form><div class="contact-card"><a href="${author.linkedin}">in LinkedIn</a><a href="${author.github}">⌘ GitHub</a><a href="mailto:${author.email}">✉ Email</a><a href="/resume.pdf">⇣ Resume download</a></div></div></section>`)
+  document.querySelector('#contact-form').onsubmit = (event) => {
+    event.preventDefault()
+    alert('Thanks for reaching out!')
+  }
+}
 
 function cms() {
-  setMeta('CMS | Engineering Notes', 'Create, edit, delete, draft, schedule, categorize, tag, and feature Markdown articles.'); const { params } = route(); const editing = state.articles.find((a) => a.id === params.get('edit')); const form = editing || { title: '', subtitle: '', excerpt: '', category: categories[0], tags: [], date: new Date().toISOString().slice(0, 10), scheduledAt: new Date().toISOString().slice(0, 16), status: 'draft', featured: false, cover: 'linear-gradient(135deg, #0f172a, #2563eb)', content: '## Introduction\n\nWrite your article in Markdown.' }
-  layout(`<section class="section page-section cms">${sectionHeading('CMS', 'Markdown publishing workspace', 'Create article, edit article, delete article, manage drafts, scheduled publishing, categories, tags, and featured posts.')}<form class="cms-form" id="cms-form"><input name="title" value="${esc(form.title)}" placeholder="Title" required><input name="subtitle" value="${esc(form.subtitle)}" placeholder="Subtitle"><textarea name="excerpt" placeholder="Short summary" required>${esc(form.excerpt)}</textarea><div class="form-row"><select name="category">${categories.map((c) => `<option ${c === form.category ? 'selected' : ''}>${c}</option>`).join('')}</select><input name="tags" value="${esc(Array.isArray(form.tags) ? form.tags.join(', ') : form.tags)}" placeholder="Tags comma-separated"><input name="date" type="date" value="${form.date}"></div><div class="form-row"><select name="status"><option ${form.status === 'draft' ? 'selected' : ''}>draft</option><option ${form.status === 'published' ? 'selected' : ''}>published</option></select><input name="scheduledAt" type="datetime-local" value="${(form.scheduledAt || '').slice(0, 16)}"><label class="check"><input name="featured" type="checkbox" ${form.featured ? 'checked' : ''}> Featured</label></div><textarea name="content" class="markdown-editor">${esc(form.content)}</textarea><button class="button primary">✎ Save Article</button></form><div class="cms-list">${state.articles.map((a) => `<div><div><strong>${esc(a.title)}</strong><p>${a.status} · ${a.category} · ${formatDate(a.date)}</p></div><a class="button secondary" href="#/cms?edit=${a.id}">Edit</a><button class="button danger" data-delete="${a.id}">Delete</button></div>`).join('')}</div></section>`)
-  document.querySelector('#cms-form').onsubmit = (e) => { e.preventDefault(); const data = new FormData(e.target); const item = { ...form, title: data.get('title'), subtitle: data.get('subtitle'), excerpt: data.get('excerpt'), category: data.get('category'), tags: data.get('tags').split(',').map((t) => t.trim()).filter(Boolean), date: data.get('date'), scheduledAt: new Date(data.get('scheduledAt')).toISOString(), status: data.get('status'), featured: Boolean(data.get('featured')), content: data.get('content'), id: form.id || slugify(data.get('title')), popularity: form.popularity || 0, cover: form.cover }; state.articles = state.articles.some((a) => a.id === item.id) ? state.articles.map((a) => a.id === item.id ? item : a) : [item, ...state.articles]; save(); location.hash = '#/blog' }
-  document.querySelectorAll('[data-delete]').forEach((button) => button.onclick = () => { state.articles = state.articles.filter((a) => a.id !== button.dataset.delete); save(); cms() })
+  setMeta('CMS | Engineering Notes', 'Create, edit, delete, draft, schedule, categorize, tag, and feature Markdown articles.')
+  const { params } = route()
+  const editing = state.articles.find((article) => article.id === params.get('edit'))
+  const form = editing || { title: '', subtitle: '', excerpt: '', category: categories[0], tags: [], date: new Date().toISOString().slice(0, 10), scheduledAt: new Date().toISOString().slice(0, 16), status: 'draft', featured: false, cover: 'linear-gradient(135deg, #0f172a, #2563eb)', content: '## Introduction\n\nWrite your article in Markdown.' }
+  layout(`<section class="section page-section cms">${sectionHeading('CMS', 'Markdown publishing workspace', 'Create article, edit article, delete article, manage drafts, scheduled publishing, categories, tags, and featured posts.')}<form class="cms-form" id="cms-form"><input name="title" value="${esc(form.title)}" placeholder="Title" required><input name="subtitle" value="${esc(form.subtitle)}" placeholder="Subtitle"><textarea name="excerpt" placeholder="Short summary" required>${esc(form.excerpt)}</textarea><div class="form-row"><select name="category">${categories.map((category) => `<option ${category === form.category ? 'selected' : ''}>${category}</option>`).join('')}</select><input name="tags" value="${esc(Array.isArray(form.tags) ? form.tags.join(', ') : form.tags)}" placeholder="Tags comma-separated"><input name="date" type="date" value="${form.date}"></div><div class="form-row"><select name="status"><option ${form.status === 'draft' ? 'selected' : ''}>draft</option><option ${form.status === 'published' ? 'selected' : ''}>published</option></select><input name="scheduledAt" type="datetime-local" value="${(form.scheduledAt || '').slice(0, 16)}"><label class="check"><input name="featured" type="checkbox" ${form.featured ? 'checked' : ''}> Featured</label></div><textarea name="content" class="markdown-editor">${esc(form.content)}</textarea><button class="button primary">✎ Save Article</button></form><div class="cms-list">${state.articles.map((article) => `<div><div><strong>${esc(article.title)}</strong><p>${article.status} · ${article.category} · ${formatDate(article.date)}</p></div><a class="button secondary" href="${href(`/cms?edit=${article.id}`)}">Edit</a><button class="button danger" data-delete="${article.id}">Delete</button></div>`).join('')}</div></section>`)
+  document.querySelector('#cms-form').onsubmit = (event) => {
+    event.preventDefault()
+    const data = new FormData(event.target)
+    const item = { ...form, title: data.get('title'), subtitle: data.get('subtitle'), excerpt: data.get('excerpt'), category: data.get('category'), tags: data.get('tags').split(',').map((tag) => tag.trim()).filter(Boolean), date: data.get('date'), scheduledAt: new Date(data.get('scheduledAt')).toISOString(), status: data.get('status'), featured: Boolean(data.get('featured')), content: data.get('content'), id: form.id || slugify(data.get('title')), popularity: form.popularity || 0, cover: form.cover }
+    state.articles = state.articles.some((article) => article.id === item.id) ? state.articles.map((article) => article.id === item.id ? item : article) : [item, ...state.articles]
+    save()
+    navigate('/blog')
+  }
+  document.querySelectorAll('[data-delete]').forEach((button) => {
+    button.onclick = () => {
+      state.articles = state.articles.filter((article) => article.id !== button.dataset.delete)
+      save()
+      cms()
+    }
+  })
 }
 
-function render() { const { path } = route(); scrollTo({ top: 0, behavior: 'instant' }); if (path === '/blog') return blog(); if (path.startsWith('/article/')) return articlePage(path.split('/').pop()); if (path === '/about') return about(); if (path === '/contact') return contact(); if (path === '/cms') return cms(); return home() }
+function render() {
+  const { path } = route()
+  scrollTo({ top: 0, behavior: 'instant' })
+  if (path === '/blog') return blog()
+  if (path.startsWith('/article/')) return articlePage(path.split('/').pop())
+  if (path === '/about') return about()
+  if (path === '/contact') return contact()
+  if (path === '/cms') return cms()
+  return home()
+}
+
 render()

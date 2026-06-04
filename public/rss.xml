@@ -1,2 +1,42 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0"><channel><title>Engineering Notes</title><link>https://example.com/</link><description>AI/ML and software engineering articles.</description><item><title>Designing RAG Systems That Survive Production Traffic</title><link>https://example.com/#/article/rag-systems-production</link><description>Production-minded RAG architecture and evaluation.</description><pubDate>Thu, 28 May 2026 08:00:00 GMT</pubDate></item><item><title>System Design Patterns for AI-Native APIs</title><link>https://example.com/#/article/system-design-ai-apis</link><description>Reliability patterns for AI-powered backend services.</description><pubDate>Sat, 16 May 2026 08:00:00 GMT</pubDate></item></channel></rss>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Engineering Notes</title>
+    <link>https://example.com/</link>
+    <atom:link href="https://example.com/rss.xml" rel="self" type="application/rss+xml" />
+    <description>AI/ML and software engineering articles for production-minded builders.</description>
+    <language>en-us</language>
+    <item>
+      <title>Designing RAG Systems That Survive Production Traffic</title>
+      <link>https://example.com/article/rag-systems-production</link>
+      <guid>https://example.com/article/rag-systems-production</guid>
+      <description>Move beyond prototype demos with a production-minded approach to retrieval-augmented generation systems.</description>
+      <category>AI &amp; Machine Learning</category>
+      <pubDate>Thu, 28 May 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>System Design Patterns for AI-Native APIs</title>
+      <link>https://example.com/article/system-design-ai-apis</link>
+      <guid>https://example.com/article/system-design-ai-apis</guid>
+      <description>Explore queues, caching, idempotency, fallback models, and observability for AI-powered backend services.</description>
+      <category>System Design</category>
+      <pubDate>Sat, 16 May 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>A Senior Engineer’s Productivity System</title>
+      <link>https://example.com/article/developer-productivity-systems</link>
+      <guid>https://example.com/article/developer-productivity-systems</guid>
+      <description>A practical system for managing focus, communication, learning, and execution without productivity theater.</description>
+      <category>Productivity</category>
+      <pubDate>Sat, 02 May 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Cloud Cost Observability for Engineering Teams</title>
+      <link>https://example.com/article/cloud-cost-observability</link>
+      <guid>https://example.com/article/cloud-cost-observability</guid>
+      <description>Turn cloud cost management into an engineering signal instead of a finance surprise.</description>
+      <category>Cloud &amp; DevOps</category>
+      <pubDate>Mon, 20 Apr 2026 08:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>
