@@ -262,3 +262,169 @@ footer div:last-child { display: flex; gap: 1rem; flex-wrap: wrap; font-weight: 
   .metric-row { grid-template-columns: 1fr; }
   footer { flex-direction: column; }
 }
+
+/* Editorial redesign inspired by mature engineering publications. */
+.brand > span:last-child { display: grid; line-height: 1.05; }
+.brand small { margin-top: 0.15rem; color: var(--muted); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.subscribe-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.55rem;
+  padding: 0 1rem;
+  border: 1px solid color-mix(in srgb, var(--green) 40%, var(--border));
+  border-radius: 999px;
+  color: #06111f;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  font-weight: 900;
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--blue) 22%, transparent);
+}
+.publication-hero {
+  position: relative;
+  max-width: calc(var(--max) + 2rem);
+  margin: 0 auto;
+  padding: clamp(3rem, 8vw, 7rem) 1rem clamp(2rem, 5vw, 4rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 23rem;
+  gap: 1.5rem;
+  align-items: end;
+}
+.publication-hero::before {
+  content: '';
+  position: absolute;
+  inset: 1rem;
+  z-index: -1;
+  border: 1px solid var(--border);
+  border-radius: 44px;
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--panel) 88%, transparent), color-mix(in srgb, var(--panel-2) 70%, transparent)),
+    radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--green) 22%, transparent), transparent 18rem),
+    radial-gradient(circle at 90% 12%, color-mix(in srgb, var(--violet) 25%, transparent), transparent 18rem);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+.masthead h1 {
+  max-width: 12ch;
+  font-size: clamp(4.5rem, 14vw, 12rem);
+  line-height: 0.78;
+  letter-spacing: -0.12em;
+}
+.masthead > p:not(.eyebrow) { max-width: 54rem; font-size: clamp(1.15rem, 2vw, 1.45rem); }
+.issue-panel {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  background: color-mix(in srgb, var(--bg) 52%, var(--panel));
+  box-shadow: var(--shadow);
+}
+.issue-panel div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 22px;
+  background: var(--panel-2);
+}
+.issue-panel span, .blog-hero-card span, .blog-hero-card small { color: var(--muted); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+.issue-panel strong { text-align: right; }
+.front-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
+  gap: 1rem;
+  align-items: stretch;
+  padding-top: 1rem;
+}
+.lead-story {
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.95fr) minmax(0, 1.05fr);
+  border: 1px solid var(--border);
+  border-radius: 34px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+.lead-story > div { padding: clamp(1.2rem, 3vw, 2rem); display: grid; align-content: center; gap: 1rem; }
+.lead-story h2 { font-size: clamp(2.4rem, 5vw, 5.2rem); }
+.lead-story p { margin: 0; }
+.lead-art {
+  position: relative;
+  min-height: 31rem;
+  overflow: hidden;
+}
+.lead-art::after, .lead-art i, .lead-art span { position: absolute; }
+.lead-art::after { content: ''; inset: 0; background: radial-gradient(circle at 75% 18%, rgba(255,255,255,0.45), transparent 10rem), linear-gradient(transparent, rgba(0,0,0,0.46)); }
+.lead-art i { inset: 14%; z-index: 1; border: 1px solid rgba(255,255,255,0.34); border-radius: 50%; }
+.lead-art span { left: 1rem; bottom: 1rem; z-index: 2; padding: 0.45rem 0.75rem; border-radius: 999px; color: white; background: rgba(0,0,0,0.42); font-weight: 900; }
+.latest-stack {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 34px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+.issue-link {
+  display: grid;
+  grid-template-columns: 2.3rem 1fr;
+  gap: 0 0.75rem;
+  padding: 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background: var(--panel-2);
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+.issue-link:hover { transform: translateX(4px); border-color: color-mix(in srgb, var(--blue) 55%, var(--border)); }
+.issue-link span { grid-row: span 2; color: var(--green); font-family: 'JetBrains Mono', monospace; font-weight: 900; }
+.issue-link small { margin-top: 0.35rem; color: var(--muted); font-weight: 700; }
+.archive-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem;
+  border-radius: 22px;
+  color: #06111f;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  font-weight: 900;
+}
+.editorial-section { padding-top: 2rem; }
+.blog-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.blog-hero .section-heading { margin-bottom: 0; }
+.blog-hero-card {
+  min-width: 11rem;
+  padding: 1.1rem;
+  border-radius: 24px;
+  background: var(--panel-2);
+  text-align: center;
+}
+.blog-hero-card strong { display: block; font-size: 3rem; letter-spacing: -0.08em; }
+
+@media (max-width: 1080px) {
+  .publication-hero, .front-page, .lead-story, .blog-hero { grid-template-columns: 1fr; }
+  .lead-art { min-height: 22rem; }
+}
+
+@media (max-width: 860px) {
+  .subscribe-link { display: none; }
+  .brand small { display: none; }
+}
+
+@media (max-width: 640px) {
+  .publication-hero { padding-top: 2rem; }
+  .masthead h1 { font-size: clamp(4rem, 22vw, 6.2rem); }
+  .issue-panel div, .issue-link { grid-template-columns: 1fr; }
+  .issue-link span { grid-row: auto; }
+  .lead-story h2 { font-size: 2.4rem; }
+}
